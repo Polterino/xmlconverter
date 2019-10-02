@@ -6,6 +6,7 @@
 #include <string.h>
 
 #define nome "xmlconv"
+#define versione "1.0"
 
 /* Opzioni:
  * input file
@@ -28,13 +29,13 @@ void controlla(char **argv, int i)
 
 void help()
 {
-	printf("Utilizzo: ./%s -i", nome);
+	printf("Utilizzo: ./%s -i fileinput -o fileoutput", nome);
 	quit();
 }
 
 void version()
 {
-	printf("Versione 1.0");
+	printf("Versione %s", versione);
 	quit();
 }
 
