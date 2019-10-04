@@ -9,11 +9,14 @@
 #include "lib/xml.h"
 
 //Variabili statiche
-#define nome "xmlconv"
 #define versione "1.0"
 
+typedef struct xml_document* structxml;
+
 // Variabili globali
-char *input = "", *output = "";
+static const char nome[] = "xmlconv";
+char *input = "";
+char *output = "";
 
 /* Opzioni:
  * input file
@@ -84,6 +87,9 @@ int main(int argc, char **argv)
 		}
 	}
 	printf("%s\n%s\n", estensione_file(*input), estensione_file(*output));
+	
+	structxml documento = xml_parse_document(source, strlen(source));
+	
 	if(input != "" && output != "")		//Se
 	{
 		file = fopen(input, "r");

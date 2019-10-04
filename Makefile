@@ -3,7 +3,7 @@ P=xmlconv
 all: pulisci compila esegui
 
 compila:
-	gcc -o ${P} ${P}.c
+	gcc ${P}.c -Llib -lxml -o ${P}
 
 pulisci:
 	if [ -f ${P} ] ; then rm ${P} ; fi
