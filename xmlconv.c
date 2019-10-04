@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+//Librerie per xml
+#include "lib/xml.h"
+
 //Variabili statiche
 #define nome "xmlconv"
 #define versione "1.0"
@@ -81,7 +84,7 @@ int main(int argc, char **argv)
 		}
 	}
 	printf("%s\n%s\n", estensione_file(*input), estensione_file(*output));
-	if(input != "" && output != "")
+	if(input != "" && output != "")		//Se
 	{
 		file = fopen(input, "r");
 		
@@ -89,10 +92,11 @@ int main(int argc, char **argv)
 		
 		fclose(file);
 		
-		file = fopen(output,"w");
+		file = fopen(output, "w");
 		
 		fclose(file);
 	}
+	
 	else
 	{
 		printf("Attenzione! Nessun file di input o di output inseriti");
