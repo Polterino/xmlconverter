@@ -12,6 +12,9 @@
         <HardDisk uuid="{6e382988-3beb-4e8f-ab78-7fe0ba48c520}" location="clientmilani.vdi" format="VDI" type="Normal">
           <HardDisk uuid="{a962fa9e-f3bf-447c-8d98-0f653c840b5b}" location="Snapshots/{a962fa9e-f3bf-447c-8d98-0f653c840b5b}.vdi" format="VDI"/>
         </HardDisk>
+        <HardDisk uuid="{6e382988-3beb-4e8f-ab78-7fe0ba48c520}" location="we.vdi" format="VDI" type="Normal">
+          <HardDisk uuid="{a962fa9e-f3bf-447c-8d98-0f653c840b5b}" location="Snapshots/{a962fa9e-f3bf-447c-8d98-0f653c840b5b}.vdi" format="VDI"/>
+        </HardDisk>
       </HardDisks>
     </MediaRegistry>
     <ExtraData>
