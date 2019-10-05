@@ -1,1 +1,0 @@
-gcc xmlconv.c -Llib -lxml -o xmlconv
