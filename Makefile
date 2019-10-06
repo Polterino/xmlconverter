@@ -1,6 +1,6 @@
 P=xmlconv
 
-all: pulisci compila esegui
+all: pulisci compila 
 
 compila:
 	#gcc ${P}.c -Llib -lxml -o ${P}

@@ -60,13 +60,13 @@ void controlla(char **argv, int i)
 	}
 }
 
-/*char *estensione_file(char *nome)
+char *estensione_file(char *nome)
 {
 	char *punto = strrchr(nome, '.');
     if(!punto || punto == nome)
 		return "";
     return punto + 1;
-} */
+}
 
 void help()
 {
@@ -89,6 +89,7 @@ void quit()
 int main(int argc, char **argv)
 {
 	FILE *file;
+	int esco;	// Variabile booleana, serve per i for che prendono le informazioni dal file xml
 	
 	if(argc > 1)	// Controlla se ci sono parametri inseriti e agisce di conseguenza
 	{
@@ -97,79 +98,90 @@ int main(int argc, char **argv)
 			controlla(argv, i);
 		}
 	}
-	input = stdin;
-	printf("%s", input);
-	//Controllare l'estensione per l'output
-	//printf("%s\n%s\n", estensione_file(*input), estensione_file(*output));
-	ezxml_t fileinput = ezxml_parse_file(input);
+	ezxml_t fileinput;
+	// Analizzo il file di input e apro quello di output
+	if(input != "")
+		fileinput = ezxml_parse_file(input);
+	else
+		fileinput = ezxml_parse_file(stdin);
 	file = fopen(output, "w");
 	
-	if(file)
-	{				
-		/*
-		 ezxml_child(ezxml_t puntatore, char stringa)
-		 Ritorna il puntatore figlio della variabile "puntatore" che si chiama "stringa"
-		  
-		 ezxml_attr(ezxml_t puntatore, char stringa)
-		 Ritorna il valore (stringa) dell'attributo "stringa" del puntatore "puntatore"
-		  
-		*/
-		
-		ezxml_t macchina = ezxml_child(fileinput, "Machine");
-		fprintf(file, "Nome della macchina: %s\n", ezxml_attr(macchina, "name"));
-		
-		fprintf(file,"Sistema Operativo: %s\nDisco rigido:\n", ezxml_attr(macchina, "OSType"));
-		
-		ezxml_t media = ezxml_child(macchina, "MediaRegistry");
-		ezxml_t dischi = ezxml_child(media, "HardDisks");
-		ezxml_t disco = ezxml_child(dischi, "HardDisk");
-		int esco = 0;											// Variabile booleana
-		for(; esco == 0; disco = disco -> next)
-		{
-			fprintf(file, "   Nome: %s   Formato: %s\n", ezxml_attr(disco, "location"), ezxml_attr(disco, "format"));
-			if(disco -> next == NULL)
-				esco = 1;
+	/*
+	 ezxml_child(ezxml_t puntatore, char stringa)
+	 Ritorna il puntatore figlio della variabile "puntatore" che si chiama "stringa"
+	  
+	 ezxml_attr(ezxml_t puntatore, char stringa)
+	 Ritorna il valore (stringa) dell'attributo "stringa" del puntatore "puntatore"
+	*/
+	// Mi preparo tutti i puntatori su cui leggere gli attributi
+	ezxml_t macchina = ezxml_child(fileinput, "Machine");
+	ezxml_t media = ezxml_child(macchina, "MediaRegistry");
+	ezxml_t dischi = ezxml_child(media, "HardDisks");
+	ezxml_t disco = ezxml_child(dischi, "HardDisk");
+	ezxml_t hardware = ezxml_child(macchina, "Hardware");
+	ezxml_t boot = ezxml_child(hardware, "Boot");
+	ezxml_t ordine_boot = ezxml_child(boot, "Order");
+	ezxml_t memoria = ezxml_child(hardware, "Memory");
+	ezxml_t network = ezxml_child(hardware, "Network");
+	ezxml_t scheda_rete = ezxml_child(network, "Adapter");
+	ezxml_t interfaccia;
+	ezxml_t scheda_audio = ezxml_child(hardware, "AudioAdapter");
+	ezxml_t rtc = ezxml_child(hardware, "RTC");
+	
+	if(strcmp(estensione_file(output), "html") == 0)
+	{
+		if(file)
+		{	
+			// Head
+			fprintf(file, "<!DOCTYPE html>\n<html>\n<head>\n    <title>%s</title>\n</head>\n", ezxml_attr(macchina, "name"));
+			// Body
+			fprintf(file, "<body style=\"background-color: #F5F5DC;\">\n    <h1>%s</h1>\n    <h4>Versione %s</h4>\n\n", nome, versione);
+			// Informazioni della virtualbox
+			fprintf(file, "    <center>\n        Macchina: <b>%s</b>", ezxml_attr(macchina, "name"));
 		}
-		
-		ezxml_t hardware = ezxml_child(macchina, "Hardware");
-		ezxml_t boot = ezxml_child(hardware, "Boot");
-		ezxml_t ordine_boot = ezxml_child(boot, "Order");
-		fprintf(file, "Ordine di boot:\n");
-		for(esco = 0; esco == 0; ordine_boot = ordine_boot -> next)
-		{
-			fprintf(file, "   Posizione: %s   Device: %s\n", ezxml_attr(ordine_boot, "position"), ezxml_attr(ordine_boot, "device"));
-			if(ordine_boot -> next == NULL)
-				esco = 1;
-		}
-		
-		ezxml_t memoria = ezxml_child(hardware, "Memory");
-		fprintf(file, "Ram: %sMb\nScheda di rete:\n", ezxml_attr(memoria, "RAMSize"));
-		
-		ezxml_t network = ezxml_child(hardware, "Network");
-		ezxml_t scheda_rete = ezxml_child(network, "Adapter");
-		ezxml_t interfaccia;
-		
-		for(esco = 0; esco == 0; scheda_rete = scheda_rete -> next)
-		{
-			if(ezxml_attr(scheda_rete, "MACAddress") != NULL)		// Se la scheda di rete ha un mac vuol dire che è attiva
-			{
-				interfaccia = ezxml_child(scheda_rete, "BridgedInterface");
-				fprintf(file,"   Slot: %s   Indirizzo Mac: %s   Tipo: %s   Interfaccia: %s\n", ezxml_attr(scheda_rete, "slot"),
-					ezxml_attr(scheda_rete, "MACAddress"), ezxml_attr(scheda_rete, "type"), ezxml_attr(interfaccia, "name"));
-			}
-			if(scheda_rete -> next == NULL)
-				esco = 1;
-		}
-		
-		ezxml_t scheda_audio = ezxml_child(hardware, "AudioAdapter");
-		fprintf(file, "Scheda audio:\n   Codec: %s   Driver: %s\n", ezxml_attr(scheda_audio, "codec"), ezxml_attr(scheda_audio, "driver"));
-		
-		ezxml_t rtc = ezxml_child(hardware, "RTC");
-		fprintf(file, "Real Time Clock: %s\n", ezxml_attr(rtc, "localOrUTC"));
-		
-		ezxml_free(fileinput);
-		fclose(file);
 	}
+	else
+	{
+		if(file)
+		{				
+			fprintf(file, "Nome della macchina: %s\n", ezxml_attr(macchina, "name"));
+			fprintf(file,"Sistema Operativo: %s\nDisco rigido:\n", ezxml_attr(macchina, "OSType"));
+			
+			for(esco = 0; esco == 0; disco = disco -> next)
+			{
+				fprintf(file, "   Nome: %s   Formato: %s\n", ezxml_attr(disco, "location"), ezxml_attr(disco, "format"));
+				if(disco -> next == NULL)
+					esco = 1;
+			}
+			
+			fprintf(file, "Ordine di boot:\n");
+			for(esco = 0; esco == 0; ordine_boot = ordine_boot -> next)
+			{
+				fprintf(file, "   Posizione: %s   Device: %s\n", ezxml_attr(ordine_boot, "position"), ezxml_attr(ordine_boot, "device"));
+				if(ordine_boot -> next == NULL)
+					esco = 1;
+			}
+			
+			fprintf(file, "Ram: %sMb\nScheda di rete:\n", ezxml_attr(memoria, "RAMSize"));
+			
+			for(esco = 0; esco == 0; scheda_rete = scheda_rete -> next)
+			{
+				if(ezxml_attr(scheda_rete, "MACAddress") != NULL)		// Se la scheda di rete ha un mac vuol dire che è attiva
+				{
+					interfaccia = ezxml_child(scheda_rete, "BridgedInterface");
+					fprintf(file,"   Slot: %s   Indirizzo Mac: %s   Tipo: %s   Interfaccia: %s\n", ezxml_attr(scheda_rete, "slot"),
+						ezxml_attr(scheda_rete, "MACAddress"), ezxml_attr(scheda_rete, "type"), ezxml_attr(interfaccia, "name"));
+				}
+				if(scheda_rete -> next == NULL)
+					esco = 1;
+			}
+			
+			fprintf(file, "Scheda audio:\n   Codec: %s   Driver: %s\n", ezxml_attr(scheda_audio, "codec"), ezxml_attr(scheda_audio, "driver"));
+			fprintf(file, "Real Time Clock: %s\n", ezxml_attr(rtc, "localOrUTC"));
+		}
+	}
+	ezxml_free(fileinput);
+	fclose(file);
 	
 	return 0;
 }
