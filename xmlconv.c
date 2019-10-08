@@ -27,6 +27,12 @@ char *output = "";
  * version
 */
 
+// Dichiarazioni delle funzioni
+void help(void);
+void version(void);
+void quit(void);
+
+
 void controlla(char **argv, int i)
 {
 	if(strcmp(argv[i], "-h") == 0)
@@ -60,7 +66,7 @@ char *estensione_file(char *nome)
 
 void help()
 {
-	printf("Utilizzo: ./%s -i fileinput -o fileoutput", nome);
+	printf("Uso: ./%s -i fileinput -o fileoutput", nome);
 	quit();
 }
 
@@ -117,13 +123,18 @@ int main(int argc, char **argv)
 			lunghezza = ftell(file);
 			fseek(file, 0, SEEK_SET);
 			buffer = malloc(lunghezza);
+			
 			if(buffer)
 			{
 				fread(buffer, 1, lunghezza, file);
 			}
 		}		
-		fclose (file);
 		
+		fclose(file);
+		
+		//printf("%s", buffer);
+		
+		/*
 		structxml documento = xml_parse_document(buffer, strlen(buffer));
 		
 		if(!documento)
@@ -149,7 +160,7 @@ int main(int argc, char **argv)
 		nodoxml root_this = xml_node_child(root, 1);
 		printf("Root/This has %lu children\n", (unsigned long)xml_node_children(root_this));
 		xml_document_free(documento, false);
-
+		*/
 		
 		//Output
 		file = fopen(output, "w");
