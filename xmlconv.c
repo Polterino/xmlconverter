@@ -66,7 +66,7 @@ char *estensione_file(char *nome)
 
 void help()
 {
-	printf("Uso: ./%s -i fileinput -o fileoutput", nome);
+	printf("Uso: ./%s [Opzione]\n   -h Menu' di aiuto\n   -v Versione del programma\n   -i fileinput\n   -o fileoutput", nome);
 	quit();
 }
 
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
 	FILE *file;
 	char *prova = "";
 	
-	if(argc > 1)	// Controlla i parametri inseriti e agisce di conseguenza
+	if(argc > 1)	// Controlla se ci sono parametri inseriti e agisce di conseguenza
 	{
 		for(int i = 1; i < argc; i++)
 		{
