@@ -1,4 +1,11 @@
 /* Michele Gusella 5AI 1/10/2019
+
+	Costruire un programma in C che dato in input il file xml di una macchina virtuale Virtualbox produca un report in formato "Umano" in formato solo testo o HTML (o RTF).
+
+	Prevedere il flusso dati stdin e stdout oppure indicando i file da riga di comando oppure l'immissione di tali file da programma con appositi parametri da riga di comando.
+
+	Se opportuno usare stderr.
+
  */
 
 #include <stdio.h>
@@ -6,14 +13,11 @@
 #include <string.h>
 
 //Librerie per xml
-#include "lib/xml.h"
+#include "lib/ezxml.h"
+#include "lib/ezxml.c"
 
 //Variabili statiche
 #define versione "1.0"
-
-typedef struct xml_document* structxml;
-typedef struct xml_node* nodoxml;
-typedef struct xml_string* stringaxml;
 
 // Variabili globali
 static const char nome[] = "xmlconv";
@@ -56,13 +60,13 @@ void controlla(char **argv, int i)
 	}
 }
 
-char *estensione_file(char *nome)
+/*char *estensione_file(char *nome)
 {
 	char *punto = strrchr(nome, '.');
     if(!punto || punto == nome)
 		return "";
     return punto + 1;
-}
+} */
 
 void help()
 {
@@ -85,7 +89,7 @@ void quit()
 int main(int argc, char **argv)
 {
 	FILE *file;
-	char *prova = "";
+	char *prova;
 	
 	if(argc > 1)	// Controlla se ci sono parametri inseriti e agisce di conseguenza
 	{
@@ -94,86 +98,55 @@ int main(int argc, char **argv)
 			controlla(argv, i);
 		}
 	}
+	
 	//Controllare l'estensione per l'output
 	//printf("%s\n%s\n", estensione_file(*input), estensione_file(*output));
-	
-	uint8_t* source = ""
-		"<Root>"
-			"<Hello>World</Hello>"
-			"<This>"
-				"<Is>:-)</Is>"
-				"<An>:-O</An>"
-				"<Example>:-D</Example>"
-				"<Example>:-D</Example>"
-			"</This>"
-		"</Root>"
-	;
 		
 	if(input != "" && output != "")		//Se l'utente ha inserito il file di input e di output
 	{
 		//Input
-		file = fopen(input, "rb");
+		//file = fopen(input, "r");
 		
-		uint8_t *buffer = 0;
-		long lunghezza;
+		ezxml_t fileinput = ezxml_parse_file(input);	
+		fileoutput = fopen(output, "w");									
+		
+		
+		ezxml_t getMeToMachine = ezxml_child(fileinput, "tipo");		
+		nome = ezxml_attr(getMeToMachine, "nome");				
+		fprintf(fileoutput, "Nome della macchina: %s\n", nome);	
 
-		if(file)
-		{
-			fseek(file, 0, SEEK_END);
-			lunghezza = ftell(file);
-			fseek(file, 0, SEEK_SET);
-			buffer = malloc(lunghezza);
-			
-			if(buffer)
-			{
-				fread(buffer, 1, lunghezza, file);
-			}
-		}		
+		ezxml_t getMeToOS = ezxml_child(fileInput, "Machine");
+		tipoOS = ezxml_attr(getMeToOS, "OSType"); 						
+		fprintf(fileOutput,"Sistema Operativo: %s\n", tipoOS);	
+		
+		ezxml_t getMeToRam1 = ezxml_child(fileInput, "Machine");
+		ezxml_t getMeToRam2 = ezxml_child(getMeToRam1, "Hardware");
+		ezxml_t grandezzaRam = ezxml_child(getMeToRam2, "Memory");
+		sizeRam = ezxml_attr(grandezzaRam, "RAMSize"); 					
+		fprintf(fileOutput,"RAM size: %sMb\n", sizeRam);		
+		
+		ezxml_free(fileInput);
+		fclose(fileOutput);	
 		
 		fclose(file);
 		
-		//printf("%s", buffer);
 		
-		/*
-		structxml documento = xml_parse_document(buffer, strlen(buffer));
-		
-		if(!documento)
-		{
-			printf("Couldn't parse document\n");
-			quit();
-		}
-		nodoxml root = xml_document_root(documento);
-		
-		nodoxml root_hello = xml_node_child(root, 0);
-		stringaxml hello = xml_node_name(root_hello);
-		stringaxml world = xml_node_content(root_hello);
-		
-		uint8_t* hello_0 = calloc(xml_string_length(hello) + 1, sizeof(uint8_t));
-		uint8_t* world_0 = calloc(xml_string_length(world) + 1, sizeof(uint8_t));
-		xml_string_copy(hello, hello_0, xml_string_length(hello));
-		xml_string_copy(world, world_0, xml_string_length(world));
-
-		printf("%s %s\n", hello_0, world_0);
-		free(hello_0);
-		free(world_0);
-		
-		nodoxml root_this = xml_node_child(root, 1);
-		printf("Root/This has %lu children\n", (unsigned long)xml_node_children(root_this));
-		xml_document_free(documento, false);
-		*/
-		
-		//Output
+		/*Output
 		file = fopen(output, "w");
-		if(buffer)
-			fprintf(file, "%s", buffer);
-			//printf("%s", buffer);
-		fclose(file);
+		
+		
+		
+		fclose(file); */
 	}
 	
-	else
+	else if(input != "" && output == "")
 	{
-		printf("Attenzione! Nessun file di input o di output inserito");
-		quit();
+		
+	}
+	
+	else if(input == "" && output == "")
+	{
+		
 	}
 	
 	return 0;
