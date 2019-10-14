@@ -23,12 +23,14 @@
 static const char nome[] = "xmlconv";
 char *input = "";
 char *output = "";
+int interattiva = 0;
 
 /* Opzioni:
  * input file
  * output file
  * help
  * version
+ * input interattivi
 */
 
 // Dichiarazioni delle funzioni
@@ -58,6 +60,11 @@ void controlla(char **argv, int i)
 	{
 		output = argv[i + 1];
 	}
+	
+	if(strcmp(argv[i], "-I") == 0)
+	{
+		interattiva = 1;
+	}
 }
 
 char *estensione_file(char *nome)
@@ -68,9 +75,28 @@ char *estensione_file(char *nome)
     return punto + 1;
 }
 
+char *leggistdin()
+{
+	char *stringa = NULL;
+	int c = 0;
+	int pos = 0;
+	
+	while((c = fgetc(stdin)) != EOF)
+	{
+		if(stringa == NULL)
+            stringa = (char*) malloc(sizeof(char));
+        else
+            stringa = (char*) realloc(stringa, sizeof(char) * (pos + 1));
+        stringa[pos] = c;
+		pos++;
+	}
+
+	return stringa;
+}
+
 void help()
 {
-	printf("Uso: ./%s [Opzione/i]\n   -h Menu' di aiuto\n   -v Versione del programma\n   -i fileinput\n   -o fileoutput", nome);
+	printf("Uso: ./%s [Opzione/i]\n   -h Menu' di aiuto\n   -v Versione del programma\n   -i File di input\n   -o File di output\n   -I Versione interattiva", nome);
 	quit();
 }
 
@@ -98,12 +124,34 @@ int main(int argc, char **argv)
 			controlla(argv, i);
 		}
 	}
-	ezxml_t fileinput;
+	
+	if(interattiva == 1)
+	{
+		char inputarr[30];
+		char outputarr[30];
+	
+		printf("Benvenuto nella parte interattiva del programma!\nInserire il nome del file di input: ");
+		scanf("%s", inputarr);
+		input = inputarr;
+		printf("Inserire il nome del file di output: ");
+		scanf("%s", outputarr);
+		output = outputarr;
+	}
+	
+	if(input == "")
+	{
+		input = leggistdin();		//dato che la funzione salva l'invio (a capo)
+		input[strlen(input) - 1] = 0;	//lo rimuovo
+	}
+	
+	if(output == "")
+	{
+		output = leggistdin();
+		output[strlen(output) - 1] = 0;
+	}
+	
 	// Analizzo il file di input e apro quello di output
-	if(input != "")
-		fileinput = ezxml_parse_file(input);
-	else
-		fileinput = ezxml_parse_file(stdin);
+	ezxml_t fileinput = ezxml_parse_file(input);
 	file = fopen(output, "w");
 	
 	/*
@@ -113,6 +161,7 @@ int main(int argc, char **argv)
 	 ezxml_attr(ezxml_t puntatore, char stringa)
 	 Ritorna il valore (stringa) dell'attributo "stringa" del puntatore "puntatore"
 	*/
+	
 	// Mi preparo tutti i puntatori su cui leggere gli attributi
 	ezxml_t macchina = ezxml_child(fileinput, "Machine");
 	ezxml_t media = ezxml_child(macchina, "MediaRegistry");
@@ -133,11 +182,52 @@ int main(int argc, char **argv)
 		if(file)
 		{	
 			// Head
-			fprintf(file, "<!DOCTYPE html>\n<html>\n<head>\n    <title>%s</title>\n</head>\n", ezxml_attr(macchina, "name"));
+			fprintf(file, "<!DOCTYPE html>\n<html lang=\"it\">\n<head>\n    <title>%s</title>\n</head>\n", ezxml_attr(macchina, "name"));
 			// Body
 			fprintf(file, "<body style=\"background-color: #F5F5DC;\">\n    <h1>%s</h1>\n    <h4>Versione %s</h4>\n\n", nome, versione);
 			// Informazioni della virtualbox
-			fprintf(file, "    <center>\n        Macchina: <b>%s</b>", ezxml_attr(macchina, "name"));
+			fprintf(file, "    <div style=\"text-align: center;\">\n        <div style=\"display: inline-block; text-align: left;\">\n            Macchina: <b>%s</b>\n            <br>\n            Sistema operativo: <b>%s</b>\n",
+				ezxml_attr(macchina, "name"), ezxml_attr(macchina, "OSType"));
+			
+			fprintf(file, "            <br>\n            Disco rigido:\n            <br>\n");
+			
+			for(esco = 0; esco == 0; disco = disco -> next)
+			{
+				fprintf(file, "            Nome: <b>%s</b>       Formato: <b>%s</b>\n            <br>\n", ezxml_attr(disco, "location"), ezxml_attr(disco, "format"));
+				if(disco -> next == NULL)
+					esco = 1;
+			}
+			
+			fprintf(file, "            Ordine di boot:\n            <br>\n");
+			
+			for(esco = 0; esco == 0; ordine_boot = ordine_boot -> next)
+			{
+				fprintf(file, "            Posizione: <b>%s</b>   Device: <b>%s</b>\n            <br>\n", ezxml_attr(ordine_boot, "position"), ezxml_attr(ordine_boot, "device"));
+				if(ordine_boot -> next == NULL)
+					esco = 1;
+			}
+			
+			fprintf(file, "            Ram: <b>%sMb</b>\n            <br>\n            Scheda di rete:\n            <br>\n", ezxml_attr(memoria, "RAMSize"));
+			
+			for(esco = 0; esco == 0; scheda_rete = scheda_rete -> next)
+			{
+				if(ezxml_attr(scheda_rete, "MACAddress") != NULL)		// Se la scheda di rete ha un mac vuol dire che è attiva
+				{
+					interfaccia = ezxml_child(scheda_rete, "BridgedInterface");
+					if(interfaccia != NULL)		//se la scheda ha una bridged interface stampala sennò no
+						fprintf(file,"            Slot: <b>%s</b>   Indirizzo Mac: <b>%s</b>   Tipo: <b>%s</b>   Interfaccia: <b>%s</b>\n            <br>\n", ezxml_attr(scheda_rete, "slot"),
+							ezxml_attr(scheda_rete, "MACAddress"), ezxml_attr(scheda_rete, "type"), ezxml_attr(interfaccia, "name"));
+					else
+						fprintf(file,"            Slot: <b>%s</b>   Indirizzo Mac: <b>%s</b>   Tipo: <b>%s</b>\n            <br>\n", ezxml_attr(scheda_rete, "slot"),
+							ezxml_attr(scheda_rete, "MACAddress"), ezxml_attr(scheda_rete, "type"));
+				}
+				if(scheda_rete -> next == NULL)
+					esco = 1;
+			}
+			
+			fprintf(file, "            Scheda audio:\n            <br>\n            Codec: <b>%s</b>   Driver: <b>%s</b>\n            <br>\n", ezxml_attr(scheda_audio, "codec"), ezxml_attr(scheda_audio, "driver"));
+			fprintf(file, "            Real Time Clock: <b>%s</b>\n", ezxml_attr(rtc, "localOrUTC"));
+			fprintf(file, "        </div>\n    </div>\n</body>\n</html>");
 		}
 	}
 	else
@@ -169,8 +259,12 @@ int main(int argc, char **argv)
 				if(ezxml_attr(scheda_rete, "MACAddress") != NULL)		// Se la scheda di rete ha un mac vuol dire che è attiva
 				{
 					interfaccia = ezxml_child(scheda_rete, "BridgedInterface");
-					fprintf(file,"   Slot: %s   Indirizzo Mac: %s   Tipo: %s   Interfaccia: %s\n", ezxml_attr(scheda_rete, "slot"),
-						ezxml_attr(scheda_rete, "MACAddress"), ezxml_attr(scheda_rete, "type"), ezxml_attr(interfaccia, "name"));
+					if(interfaccia != NULL)		//se la scheda ha una bridged interface stampala sennò no
+						fprintf(file,"   Slot: %s   Indirizzo Mac: %s   Tipo: %s   Interfaccia: %s\n", ezxml_attr(scheda_rete, "slot"),
+							ezxml_attr(scheda_rete, "MACAddress"), ezxml_attr(scheda_rete, "type"), ezxml_attr(interfaccia, "name"));
+					else
+						fprintf(file,"   Slot: %s   Indirizzo Mac: %s   Tipo: %s\n", ezxml_attr(scheda_rete, "slot"),
+							ezxml_attr(scheda_rete, "MACAddress"), ezxml_attr(scheda_rete, "type"));
 				}
 				if(scheda_rete -> next == NULL)
 					esco = 1;
