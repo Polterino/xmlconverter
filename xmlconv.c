@@ -115,6 +115,7 @@ void quit()
 int main(int argc, char **argv)
 {
 	FILE *file;
+	ezxml_t fileinput;
 	int esco;	// Variabile booleana, serve per i for che prendono le informazioni dal file xml
 	
 	if(argc > 1)	// Controlla se ci sono parametri inseriti e agisce di conseguenza
@@ -138,21 +139,23 @@ int main(int argc, char **argv)
 		output = outputarr;
 	}
 	
+	// Analizzo il file (o la stringa) di input e apro quello di output
 	if(input == "")
 	{
 		input = leggistdin();		//dato che la funzione salva l'invio (a capo)
 		input[strlen(input) - 1] = 0;	//lo rimuovo
+		fileinput = ezxml_parse_str(input, strlen(input));
 	}
+	else
+		fileinput = ezxml_parse_file(input);
 	
+	// Se non si specifica l'output, è sottointeso che sia stdout
 	if(output == "")
 	{
-		output = leggistdin();
-		output[strlen(output) - 1] = 0;
+		file = stdout;
 	}
-	
-	// Analizzo il file di input e apro quello di output
-	ezxml_t fileinput = ezxml_parse_file(input);
-	file = fopen(output, "w");
+	else
+		file = fopen(output, "w");
 	
 	/*
 	 ezxml_child(ezxml_t puntatore, char stringa)
@@ -162,7 +165,7 @@ int main(int argc, char **argv)
 	 Ritorna il valore (stringa) dell'attributo "stringa" del puntatore "puntatore"
 	*/
 	
-	// Mi preparo tutti i puntatori su cui leggere gli attributi
+	// Preparo tutti i puntatori su cui leggere gli attributi
 	ezxml_t macchina = ezxml_child(fileinput, "Machine");
 	ezxml_t media = ezxml_child(macchina, "MediaRegistry");
 	ezxml_t dischi = ezxml_child(media, "HardDisks");
@@ -177,6 +180,7 @@ int main(int argc, char **argv)
 	ezxml_t scheda_audio = ezxml_child(hardware, "AudioAdapter");
 	ezxml_t rtc = ezxml_child(hardware, "RTC");
 	
+	// Se l'output è un html, crea un file html
 	if(strcmp(estensione_file(output), "html") == 0)
 	{
 		if(file)
@@ -230,7 +234,7 @@ int main(int argc, char **argv)
 			fprintf(file, "        </div>\n    </div>\n</body>\n</html>");
 		}
 	}
-	else
+	else       // Sennò crea un normale file txt
 	{
 		if(file)
 		{				
